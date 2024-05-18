@@ -14,7 +14,7 @@ export const createAuthThings = <TAppContext, TJwtPayload extends object | strin
   jwtSecret: string
   passwordSalt: string
   normalizeJwtPayload: (jwtPayload: any) => TJwtPayload
-  getMeFromJwtPayload: (jwtPayload: TJwtPayload, ctx: TAppContext) => TMe
+  getMeFromJwtPayload: (jwtPayload: TJwtPayload, ctx: TAppContext) => Promise<TMe>
   tokenCookieName: string
 }) => {
   const signJwt = (jwtPayload: any) => {
@@ -43,7 +43,7 @@ export const createAuthThings = <TAppContext, TJwtPayload extends object | strin
           },
         },
         (jwtPayload: any, done) => {
-          ;(async () => {
+          void (async () => {
             try {
               done(null, await getMeFromJwtPayload(normalizeJwtPayload(jwtPayload), ctx))
             } catch (error) {
