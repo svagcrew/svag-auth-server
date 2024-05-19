@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import { Passport } from 'passport'
 import { ExtractJwt, Strategy as JWTStrategy } from 'passport-jwt'
 
-export const createAuthThings = <TAppContext, TJwtPayload extends object | string, TMe>({
+export const createAuthThings = <TAppContext, TJwtPayload extends object | string, TMe, TExpress extends Express>({
   jwtSecret,
   passwordSalt,
   normalizeJwtPayload,
@@ -26,7 +26,7 @@ export const createAuthThings = <TAppContext, TJwtPayload extends object | strin
     return crypto.createHash('sha256').update(`${passwordSalt}${password}`).digest('hex')
   }
 
-  const applyAuthToExpressApp = ({ expressApp, ctx }: { expressApp: Express; ctx: TAppContext }): void => {
+  const applyAuthToExpressApp = ({ expressApp, ctx }: { expressApp: TExpress; ctx: TAppContext }): void => {
     const passport = new Passport()
 
     passport.use(
