@@ -4,17 +4,28 @@ import jwt from 'jsonwebtoken'
 import { Passport } from 'passport'
 import { ExtractJwt, Strategy as JWTStrategy } from 'passport-jwt'
 
-export const createAuthThings = <TAppContext, TJwtPayload extends object | string, TMe, TExpress extends Express>({
+type LikeRequest = Record<string, any>
+
+export const createAuthThings = <
+  TAppContext,
+  TJwtPayload extends object | string,
+  TMeFromJwtPayload,
+  TMe = TMeFromJwtPayload,
+  TExpress extends Express = Express,
+  TRequest extends LikeRequest = LikeRequest,
+>({
   jwtSecret,
   passwordSalt,
   normalizeJwtPayload,
   getMeFromJwtPayload,
+  getMeByJwtPayloadAndRequest = (meFromJwtPayload) => meFromJwtPayload as any,
   tokenCookieName,
 }: {
   jwtSecret: string
   passwordSalt: string
   normalizeJwtPayload: (jwtPayload: any) => TJwtPayload
-  getMeFromJwtPayload: (jwtPayload: TJwtPayload, ctx: TAppContext) => Promise<TMe>
+  getMeFromJwtPayload: (jwtPayload: TJwtPayload, ctx: TAppContext) => Promise<TMeFromJwtPayload>
+  getMeByJwtPayloadAndRequest?: (meFromJwtPayload: TMeFromJwtPayload, req: TRequest) => Promise<TMe> | TMe
   tokenCookieName: string
 }) => {
   const signJwt = (jwtPayload: any) => {
@@ -56,7 +67,8 @@ export const createAuthThings = <TAppContext, TJwtPayload extends object | strin
 
     expressApp.use((req: any, res: any, next: any) => {
       passport.authenticate('jwt', { session: false }, (...args: any[]) => {
-        ;(req as any).me = args[1] || undefined
+        const me = getMeByJwtPayloadAndRequest(args[1], req)
+        ;(req as any).me = me
         next()
       })(req, res, next)
     })
@@ -67,5 +79,6 @@ export const createAuthThings = <TAppContext, TJwtPayload extends object | strin
     signJwt: signJwt as (jwtPayload: TJwtPayload) => string,
     getPasswordHash,
     getMeFromJwtPayload,
+    getMeByJwtPayloadAndRequest,
   }
 }
