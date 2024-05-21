@@ -32,9 +32,20 @@ export const createAuthThings = <
     return jwt.sign(normalizedPayload, jwtSecret)
   }
 
-  const parseJwt = (token: string) => {
-    const rawJwtPayload = jwt.verify(token, jwtSecret)
-    return normalizeJwtPayload(rawJwtPayload)
+  const parseJwt = async (token: string) => {
+    return await new Promise<TJwtPayload>((resolve, reject) => {
+      jwt.verify(token, jwtSecret, (error, decoded) => {
+        try {
+          if (error) {
+            resolve(normalizeJwtPayload(undefined))
+          } else {
+            resolve(normalizeJwtPayload(decoded))
+          }
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
   }
 
   const getPasswordHash = (password: string) => {
@@ -46,9 +57,9 @@ export const createAuthThings = <
       const token = req.headers?.authorization?.startsWith('Bearer ')
         ? req.headers.authorization.slice(7)
         : req.cookies[tokenCookieName]
-      const jwtPayload = token ? parseJwt(token) : normalizeJwtPayload(undefined)
       void (async () => {
         try {
+          const jwtPayload = token ? await parseJwt(token) : normalizeJwtPayload(undefined)
           const meFromJwtPayload = await getMeFromJwtPayload(jwtPayload, ctx, req)
           ;(req as any).me = meFromJwtPayload
           next()
