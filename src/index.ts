@@ -67,9 +67,16 @@ export const createAuthThings = <
 
     expressApp.use((req: any, res: any, next: any) => {
       passport.authenticate('jwt', { session: false }, (...args: any[]) => {
-        const me = getMeByJwtPayloadAndRequest(args[1], req)
-        ;(req as any).me = me
-        next()
+        const maybePromise = getMeByJwtPayloadAndRequest(args[1], req)
+        const promise = maybePromise instanceof Promise ? maybePromise : Promise.resolve(maybePromise)
+        promise
+          .then((me) => {
+            ;(req as any).me = me
+            next()
+          })
+          .catch((error) => {
+            next(error)
+          })
       })(req, res, next)
     })
   }
