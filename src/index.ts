@@ -82,3 +82,7 @@ export const createAuthThings = <
     getMeFromJwtPayload,
   }
 }
+
+export type MeServerObject<TMeServer> = {
+  me: TMeServer
+}
