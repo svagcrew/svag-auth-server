@@ -16,6 +16,7 @@ export const createAuthThings = <
   normalizeJwtPayload,
   getMeFromJwtPayload,
   tokenCookieName,
+  getTokenFromRequest,
 }: {
   jwtSecret: string
   passwordSalt: string
@@ -25,7 +26,8 @@ export const createAuthThings = <
     ctx: TAppContext,
     req?: TRequest
   ) => Promise<TMeFromJwtPayload> | TMeFromJwtPayload
-  tokenCookieName: string
+  tokenCookieName?: string
+  getTokenFromRequest?: (req: TRequest) => string | undefined
 }) => {
   const signJwt = (jwtPayload: any) => {
     const normalizedPayload = normalizeJwtPayload(jwtPayload)
@@ -54,9 +56,12 @@ export const createAuthThings = <
 
   const applyAuthToExpressApp = ({ expressApp, ctx }: { expressApp: TExpress; ctx: TAppContext }): void => {
     expressApp.use((req: any, res: any, next: any) => {
-      const token = req.headers?.authorization?.startsWith('Bearer ')
+      const tokenFromBearer = req.headers?.authorization?.startsWith('Bearer ')
         ? req.headers.authorization.slice(7)
-        : req.cookies[tokenCookieName]
+        : undefined
+      const tokenFromCookies = tokenCookieName ? req.cookies[tokenCookieName] : undefined
+      const tokenFromGetter = getTokenFromRequest ? getTokenFromRequest(req) : undefined
+      const token = tokenFromGetter || tokenFromBearer || tokenFromCookies
       void (async () => {
         try {
           const jwtPayload = token ? await parseJwt(token) : normalizeJwtPayload(undefined)
