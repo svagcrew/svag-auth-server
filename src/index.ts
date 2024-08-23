@@ -12,6 +12,7 @@ export const createAuthThings = <
   TRequest extends LikeRequest = LikeRequest,
 >({
   jwtSecret,
+  jwtExpiresIn,
   passwordSalt,
   normalizeJwtPayload,
   getMeFromJwtPayload,
@@ -19,6 +20,7 @@ export const createAuthThings = <
   getTokenFromRequest,
 }: {
   jwtSecret: string
+  jwtExpiresIn?: string | number
   passwordSalt: string
   normalizeJwtPayload: (jwtPayload: any) => TJwtPayload
   getMeFromJwtPayload: (
@@ -31,7 +33,13 @@ export const createAuthThings = <
 }) => {
   const signJwt = (jwtPayload: any) => {
     const normalizedPayload = normalizeJwtPayload(jwtPayload)
-    return jwt.sign(normalizedPayload, jwtSecret)
+    return jwt.sign(normalizedPayload, jwtSecret, {
+      ...(jwtExpiresIn
+        ? {
+            expiresIn: jwtExpiresIn,
+          }
+        : {}),
+    })
   }
 
   const parseJwt = async (token: string) => {
